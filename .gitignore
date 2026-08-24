@@ -1,0 +1,34 @@
+# Môi trường ảo
+venv/
+env/
+.env_venv/
+
+# File chứa biến môi trường
+.env
+.env.*
+!.env.example
+
+# File sinh ra bởi Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Thư mục lưu trữ file upload từ người dùng
+uploads/
+
+# IDE và cấu hình editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Cơ sở dữ liệu cục bộ
+*.sqlite
+*.sqlite3
+
+# Log files
+*.log
+
+# pytest
+.pytest_cache/

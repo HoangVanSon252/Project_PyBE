@@ -58,6 +58,8 @@ def get_current_user(
             code="UNAUTHORIZED",
             message="Thông tin xác thực không hợp lệ"
         )
+    except APIException as e:
+        raise e
     except Exception as e:
         raise APIException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

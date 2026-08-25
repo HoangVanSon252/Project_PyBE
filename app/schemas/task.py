@@ -66,3 +66,9 @@ class TaskResponse(TaskBase):
     created_at: datetime = Field(..., description="Thời gian tạo công việc")
     
     model_config = ConfigDict(from_attributes=True)
+
+class TaskPaginationResponse(BaseModel):
+    items: list[TaskResponse]
+    total: int
+    page: int
+    size: int

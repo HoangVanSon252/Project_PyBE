@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 from app.dependencies.deps import get_db, get_current_user
 from app.services.project import project_service
@@ -12,8 +12,13 @@ router = APIRouter(
     tags=["projects"]
 )
 
-
-@router.post("/", response_model=ResponseSchemas[ProjectResponse])
+@router.post(
+    "/",
+    response_model=ResponseSchemas[ProjectResponse],
+    status_code=status.HTTP_201_CREATED,
+    summary="Tạo dự án mới",
+    description="Người dùng đăng nhập có thể tạo dự án và tự động trở thành Chủ dự án (OWNER)."
+)
 async def create_project(
     project: ProjectCreate,
     db: Session = Depends(get_db),
@@ -26,7 +31,12 @@ async def create_project(
         data=new_project
     )
 
-@router.get("/", response_model=ResponseSchemas[list[ProjectResponse]])
+@router.get(
+    "/",
+    response_model=ResponseSchemas[list[ProjectResponse]],
+    summary="Lấy danh sách dự án",
+    description="Lấy danh sách các dự án mà người dùng hiện tại đang tham gia (với tư cách là OWNER hoặc MEMBER). Hỗ trợ tìm kiếm theo tên dự án."
+)
 async def get_list_project(
     search: Optional[str] = Query(None, description="Tìm kiếm theo tên dự án"),
     db: Session = Depends(get_db),
@@ -39,7 +49,12 @@ async def get_list_project(
         data=list_project
     )
 
-@router.get("/{project_id}", response_model=ResponseSchemas[ProjectResponse])
+@router.get(
+    "/{project_id}",
+    response_model=ResponseSchemas[ProjectResponse],
+    summary="Xem chi tiết dự án",
+    description="Lấy thông tin chi tiết của một dự án bằng ID. Yêu cầu người dùng phải là thành viên của dự án này."
+)
 async def get_project_by_id(
     project_id: int,
     db: Session = Depends(get_db),
@@ -52,7 +67,12 @@ async def get_project_by_id(
         data=project
     )
 
-@router.put("/{project_id}", response_model=ResponseSchemas[ProjectResponse])
+@router.put(
+    "/{project_id}",
+    response_model=ResponseSchemas[ProjectResponse],
+    summary="Cập nhật thông tin dự án",
+    description="Cập nhật thông tin dự án. Chỉ có Chủ dự án (OWNER) mới có quyền thực hiện chức năng này."
+)
 async def update_project(
     project: ProjectUpdate,
     project_id: int,
@@ -66,7 +86,12 @@ async def update_project(
         data=updated_project
     )
 
-@router.delete("/{project_id}", response_model=ResponseSchemas[ProjectResponse])
+@router.delete(
+    "/{project_id}",
+    response_model=ResponseSchemas[ProjectResponse],
+    summary="Xóa dự án (Soft Delete)",
+    description="Xóa dự án bằng cách cập nhật cờ is_deleted (xóa mềm). Chỉ có Chủ dự án (OWNER) mới được phép xóa."
+)
 async def delete_project(
     project_id: int,
     db: Session = Depends(get_db),
@@ -79,7 +104,12 @@ async def delete_project(
         data=deleted_project
     )
 
-@router.post("/{project_id}/members", response_model=ResponseSchemas[ProjectMemberResponse])
+@router.post(
+    "/{project_id}/members",
+    response_model=ResponseSchemas[ProjectMemberResponse],
+    summary="Thêm thành viên vào dự án",
+    description="Chủ dự án (OWNER) có thể thêm một người dùng khác vào dự án với một vai trò cụ thể. Không được thêm trùng người dùng đã có."
+)
 async def add_member_to_project(
     project_id: int,
     member: ProjectMemberCreate,
@@ -93,7 +123,12 @@ async def add_member_to_project(
         data=new_member
     )
 
-@router.get("/{project_id}/members", response_model=ResponseSchemas[list[ProjectMemberResponse]])
+@router.get(
+    "/{project_id}/members",
+    response_model=ResponseSchemas[list[ProjectMemberResponse]],
+    summary="Danh sách thành viên dự án",
+    description="Lấy danh sách tất cả thành viên và vai trò của họ trong dự án. Người gọi phải là thành viên của dự án."
+)
 async def get_members_from_project(
     project_id: int,
     db: Session = Depends(get_db),
@@ -106,7 +141,12 @@ async def get_members_from_project(
         data=members
     )
 
-@router.delete("/{project_id}/members/{member_id}", response_model=ResponseSchemas[ProjectMemberResponse])
+@router.delete(
+    "/{project_id}/members/{member_id}",
+    response_model=ResponseSchemas[ProjectMemberResponse],
+    summary="Xóa thành viên khỏi dự án",
+    description="Chủ dự án (OWNER) có thể loại bỏ thành viên khỏi dự án. Không cho phép xóa OWNER duy nhất/cuối cùng của dự án."
+)
 async def remove_member_from_project(
     project_id: int,
     member_id: int,

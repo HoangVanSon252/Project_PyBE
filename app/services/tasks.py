@@ -8,7 +8,7 @@ import os
 import shutil
 from fastapi import UploadFile
 from app.models.task import Task
-from app.schemas.task import TaskCreate
+from app.schemas.task import TaskCreate, TaskUpdate
 from app.models.project import ProjectMember
 from sqlalchemy.orm import Session
 class TaskService:
@@ -69,7 +69,6 @@ class TaskService:
                 error=str(e)
             )
 
-            
     def get_project_tasks(
         self, db: Session, project_id: int, current_user_id: int,
         status: Optional[TaskStatus] = None, priority: Optional[TaskPriority] = None,
@@ -107,6 +106,42 @@ class TaskService:
             raise e
         except Exception as e:
             raise APIException(500, "INTERNAL_SERVER_ERROR", "Lỗi server", str(e))
+
+    def update_task(self, db: Session, task_id: int, current_user_id: int, task_data: TaskUpdate):
+        try:
+            task = db.query(Task).filter(Task.id == task_id).first()
+            if not task:
+                raise APIException(404, "NOT_FOUND", "Không tìm thấy công việc")
+
+            is_member = db.query(ProjectMember).filter(
+                ProjectMember.project_id == task.project_id,
+                ProjectMember.user_id == current_user_id
+            ).first()
+            if not is_member:
+                raise APIException(403, "FORBIDDEN", "Bạn không có quyền truy cập công việc này")
+
+            if task_data.assignee_id is not None and task_data.assignee_id != task.assignee_id:
+                is_assignee_member = db.query(ProjectMember).filter(
+                    ProjectMember.project_id == task.project_id,
+                    ProjectMember.user_id == task_data.assignee_id
+                ).first()
+                if not is_assignee_member:
+                    raise APIException(403, "ASSIGNEE_NOT_FOUND", "Người được giao không có trong dự án")
+
+            update_data = task_data.model_dump(exclude_unset=True)
+            for key, value in update_data.items():
+                setattr(task, key, value)
+
+            db.commit()
+            db.refresh(task)
+            return task
+        except APIException as e:
+            db.rollback()
+            raise e
+        except Exception as e:
+            db.rollback()
+            raise APIException(500, "INTERNAL_SERVER_ERROR", "Lỗi server", str(e))
+
     def get_task_by_id(self, db: Session, task_id: int, current_user_id: int):
         try:
             task = db.query(Task).filter(Task.id == task_id).first()
@@ -125,6 +160,7 @@ class TaskService:
             raise e
         except Exception as e:
             raise APIException(500, "INTERNAL_SERVER_ERROR", "Lỗi server", str(e))
+
     def delete_task(self, db: Session, task_id: int, current_user_id: int):
         try:
             task = db.query(Task).filter(Task.id == task_id).first()
@@ -151,6 +187,7 @@ class TaskService:
         except Exception as e:
             db.rollback()
             raise APIException(500, "INTERNAL_SERVER_ERROR", "Lỗi server", str(e))
+
     def add_comment(self, db: Session, task_id: int, current_user_id: int, comment_data: CommentCreate):
         try:
             task = db.query(Task).filter(Task.id == task_id).first()
@@ -178,6 +215,7 @@ class TaskService:
         except Exception as e:
             db.rollback()
             raise APIException(500, "INTERNAL_SERVER_ERROR", "Lỗi server", str(e))
+
     def upload_attachment(self, db: Session, task_id: int, current_user_id: int, file: UploadFile):
         try:
             task = db.query(Task).filter(Task.id == task_id).first()

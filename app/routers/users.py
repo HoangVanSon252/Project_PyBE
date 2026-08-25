@@ -14,7 +14,12 @@ router = APIRouter(
 )
 
 
-@router.get("/me", response_model = ResponseSchemas[UserResponse])
+@router.get(
+    "/me",
+    response_model=ResponseSchemas[UserResponse],
+    summary="Thông tin cá nhân",
+    description="Lấy thông tin của người dùng đang đăng nhập dựa trên token. Không trả về password_hash."
+)
 def get_user(current_user: UserResponse = Depends(get_current_user)):
     return ResponseSchemas(
         success=True,
@@ -22,7 +27,12 @@ def get_user(current_user: UserResponse = Depends(get_current_user)):
         data=current_user
     )
 
-@router.get("", response_model = ResponseSchemas[list[UserResponse]])
+@router.get(
+    "",
+    response_model=ResponseSchemas[list[UserResponse]],
+    summary="Danh sách người dùng (Chỉ Admin)",
+    description="Lấy danh sách tất cả người dùng trong hệ thống. Chỉ tài khoản có role ADMIN mới được phép truy cập."
+)
 def get_list_user(
     search: Optional[str] = Query(None, description="Tìm kiếm theo Tên hoặc Email"),
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái hoạt động"),

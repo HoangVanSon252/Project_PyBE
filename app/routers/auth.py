@@ -17,7 +17,13 @@ router = APIRouter(
 )
 
 
-@router.post("/register", response_model=ResponseSchemas[UserResponse])
+@router.post(
+    "/register",
+    response_model=ResponseSchemas[UserResponse],
+    status_code=status.HTTP_201_CREATED,
+    summary="Đăng ký tài khoản mới",
+    description="Tạo một tài khoản người dùng mới. Yêu cầu email chưa tồn tại trong hệ thống."
+)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
     user_exits = db.query(Users).filter(Users.email == user_data.email).first()
     if user_exits:
@@ -45,7 +51,11 @@ login_attempts  = {}
 MAX_ATTEMPTS = 5
 LOCK_TIME = timedelta(minutes=5)
 
-@router.post("/login")
+@router.post(
+    "/login",
+    summary="Đăng nhập",
+    description="Xác thực người dùng bằng email và mật khẩu, trả về Access Token và Refresh Token. Cảnh báo: Tạm khóa tài khoản 5 phút nếu đăng nhập sai quá 5 lần."
+)
 def login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     time_now = datetime.now(timezone.utc)
     email_to_check = login_data.username
@@ -93,7 +103,12 @@ def login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
     }
 
 
-@router.post("/refresh-token", response_model=ResponseSchemas[dict])
+@router.post(
+    "/refresh-token",
+    response_model=ResponseSchemas[dict],
+    summary="Cấp lại Access Token",
+    description="Sử dụng Refresh Token hợp lệ để lấy Access Token mới."
+)
 def refresh_token(refresh_token_data: RefreshTokenRequest, db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token=refresh_token_data.refresh_token, key=settings.SECRET_KEY, algorithms=[settings.ALGORITHM])

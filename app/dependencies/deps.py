@@ -9,6 +9,9 @@ from app.models.user import Users, UserRole
 from app.core.exceptions import APIException
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+
+
+# Dependency: Cung cấp Database Session cho từng request, tự động đóng sau khi hoàn thành
 def get_db():
     db = SessionLocal()
     try:
@@ -17,13 +20,15 @@ def get_db():
         db.close()
 
 
+# Dependency: Bóc tách và xác thực JWT Access Token để lấy thông tin User hiện tại
 def get_current_user(
     db: Session = Depends(get_db),
     token: str = Depends(oauth2_scheme)
 ):
 
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token, settings.SECRET_KEY,
+                             algorithms=[settings.ALGORITHM])
         user_id: str = payload.get("id")
         token_type = payload.get("type")
 
@@ -70,6 +75,7 @@ def get_current_user(
         )
 
 
+# Dependency: Kiểm tra User hiện tại có phải là Admin hay không (Dựa vào Role)
 def get_current_user_is_admin(
     current_user: Users = Depends(get_current_user)
 ):

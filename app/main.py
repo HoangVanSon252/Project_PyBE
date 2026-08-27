@@ -11,6 +11,7 @@ app = FastAPI()
 setup_exception_handler(app=app)
 
 
+# API Health check: Dùng để kiểm tra xem server có đang hoạt động bình thường không
 @app.get("/health", response_model=ResponseSchemas[dict])
 def health_test():
     return ResponseSchemas(

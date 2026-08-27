@@ -3,11 +3,13 @@ from pydantic import AnyHttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+# Lớp Settings: Đọc và quản lý toàn bộ các biến môi trường từ file .env
 class Settings(BaseSettings):
     ENVIRONMENT: str
 
     BACKEND_CORS_ORIGINS: List[AnyHttpUrl] = []
 
+    # Xử lý chuỗi CORS thành list hợp lệ
     @field_validator("BACKEND_CORS_ORIGINS", mode="before")
     @classmethod
     def assemble_cors_origins(cls, values: Union[str, List[str]]):

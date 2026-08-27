@@ -7,6 +7,7 @@ from typing import Optional
 from app.dependencies.deps import get_db
 from app.models.user import Users
 from app.models.user import UserRole
+from datetime import datetime
 
 router = APIRouter(
     prefix="/users",
@@ -20,11 +21,20 @@ router = APIRouter(
     summary="Thông tin cá nhân",
     description="Lấy thông tin của người dùng đang đăng nhập dựa trên token. Không trả về password_hash."
 )
-def get_user(current_user: UserResponse = Depends(get_current_user)):
+# API Lấy thông tin cá nhân của User hiện tại (Profile)
+async def get_user(current_user: Users = Depends(get_current_user)):
     return ResponseSchemas(
         success=True,
         message="Lấy thông tin người dùng thành công",
-        data=current_user
+        data={
+            "id": current_user.id,
+            "email": current_user.email,
+            "full_name": current_user.full_name,
+            "role": current_user.role,
+            "is_active": current_user.is_active,
+            "created_at": current_user.created_at,
+            "account_age_days": (datetime.now() - current_user.created_at).days
+        }
     )
 
 @router.get(
@@ -32,8 +42,9 @@ def get_user(current_user: UserResponse = Depends(get_current_user)):
     response_model=ResponseSchemas[list[UserResponse]],
     summary="Danh sách người dùng (Chỉ Admin)",
     description="Lấy danh sách tất cả người dùng trong hệ thống. Chỉ tài khoản có role ADMIN mới được phép truy cập."
-)
-def get_list_user(
+) 
+# API Lấy danh sách toàn bộ User (Chỉ Admin mới có quyền truy cập, hỗ trợ tìm kiếm và lọc trạng thái)
+async def get_list_user(
     search: Optional[str] = Query(None, description="Tìm kiếm theo Tên hoặc Email"),
     is_active: Optional[bool] = Query(None, description="Lọc theo trạng thái hoạt động"),
     db: Session = Depends(get_db),

@@ -3,6 +3,7 @@ from pydantic import BaseModel, Field
 
 ModelType = TypeVar("ModelType")
 
+# Schema ResponseSchemas: Chuẩn hóa định dạng trả về cho mọi API
 class ResponseSchemas(BaseModel, Generic[ModelType]):
     success: bool = Field(True, description="Trạng thái thành công")
     code: str = Field("SUCCESS", description="Mã trạng thái")

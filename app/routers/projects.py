@@ -19,6 +19,7 @@ router = APIRouter(
     summary="Tạo dự án mới",
     description="Người dùng đăng nhập có thể tạo dự án và tự động trở thành Chủ dự án (OWNER)."
 )
+# API Tạo dự án (người tạo tự động làm OWNER)
 async def create_project(
     project: ProjectCreate,
     db: Session = Depends(get_db),
@@ -37,6 +38,7 @@ async def create_project(
     summary="Lấy danh sách dự án",
     description="Lấy danh sách các dự án mà người dùng hiện tại đang tham gia (với tư cách là OWNER hoặc MEMBER). Hỗ trợ tìm kiếm theo tên dự án."
 )
+# API Lấy danh sách dự án mà User hiện tại có tham gia
 async def get_list_project(
     search: Optional[str] = Query(None, description="Tìm kiếm theo tên dự án"),
     db: Session = Depends(get_db),
@@ -55,6 +57,7 @@ async def get_list_project(
     summary="Xem chi tiết dự án",
     description="Lấy thông tin chi tiết của một dự án bằng ID. Yêu cầu người dùng phải là thành viên của dự án này."
 )
+# API Xem chi tiết thông tin dự án
 async def get_project_by_id(
     project_id: int,
     db: Session = Depends(get_db),
@@ -73,6 +76,7 @@ async def get_project_by_id(
     summary="Cập nhật thông tin dự án",
     description="Cập nhật thông tin dự án. Chỉ có Chủ dự án (OWNER) mới có quyền thực hiện chức năng này."
 )
+# API Cập nhật dự án (Chỉ OWNER)
 async def update_project(
     project: ProjectUpdate,
     project_id: int,
@@ -92,6 +96,7 @@ async def update_project(
     summary="Xóa dự án (Soft Delete)",
     description="Xóa dự án bằng cách cập nhật cờ is_deleted (xóa mềm). Chỉ có Chủ dự án (OWNER) mới được phép xóa."
 )
+# API Xóa mềm dự án (Chỉ OWNER)
 async def delete_project(
     project_id: int,
     db: Session = Depends(get_db),
@@ -110,6 +115,7 @@ async def delete_project(
     summary="Thêm thành viên vào dự án",
     description="Chủ dự án (OWNER) có thể thêm một người dùng khác vào dự án với một vai trò cụ thể. Không được thêm trùng người dùng đã có."
 )
+# API Thêm người dùng vào dự án
 async def add_member_to_project(
     project_id: int,
     member: ProjectMemberCreate,
@@ -129,6 +135,7 @@ async def add_member_to_project(
     summary="Danh sách thành viên dự án",
     description="Lấy danh sách tất cả thành viên và vai trò của họ trong dự án. Người gọi phải là thành viên của dự án."
 )
+# API Lấy danh sách thành viên trong dự án
 async def get_members_from_project(
     project_id: int,
     db: Session = Depends(get_db),
@@ -147,6 +154,7 @@ async def get_members_from_project(
     summary="Xóa thành viên khỏi dự án",
     description="Chủ dự án (OWNER) có thể loại bỏ thành viên khỏi dự án. Không cho phép xóa OWNER duy nhất/cuối cùng của dự án."
 )
+# API Xóa thành viên khỏi dự án
 async def remove_member_from_project(
     project_id: int,
     member_id: int,

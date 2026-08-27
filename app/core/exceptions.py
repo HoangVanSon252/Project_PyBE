@@ -2,15 +2,20 @@ from typing import List
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from fastapi import Request
+from fastapi import Request, status, HTTPException
+from datetime import datetime
 
+
+# Class APIException: Lớp Exception tùy chỉnh để ném ra các lỗi có kiểm soát trong hệ thống
 class APIException(Exception):
-    def __init__(self, status_code: int, code:str, message: str, error: List = None):
+    def __init__(self, status_code: int, code: str, message: str, error: List = None):
         self.status_code = status_code
         self.code = code
         self.message = message
         self.error = error
 
+
+# Hàm setup_exception_handler: Đăng ký các Handler bắt lỗi tập trung (Global Exception Handling)
 def setup_exception_handler(app):
     @app.exception_handler(APIException)
     async def api_exception_handler(request: Request, exc: APIException):
@@ -21,19 +26,24 @@ def setup_exception_handler(app):
                 "code": exc.code,
                 "message": exc.message,
                 "data": None,
-                "error": exc.error
+                "error": exc.error,
+                "time_stamp": datetime.now().isoformat()
             }
         )
+
     @app.exception_handler(RequestValidationError)
     async def validation_exception_handler(request: Request, exc: RequestValidationError):
         return JSONResponse(
-            status_code=422,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             content={
                 "success": False,
                 "code": "VALIDATION_ERROR",
                 "message": "Dữ liệu không hợp lệ",
                 "data": None,
-                "error": exc.errors()
+                "error": {
+                    "type": exc.errors()[0]["type"],
+                    "message": exc.errors()[0]["msg"]
+                },
             }
         )
 
@@ -49,6 +59,7 @@ def setup_exception_handler(app):
                 "error": None
             }
         )
+
     @app.exception_handler(Exception)
     async def exception_handler(request: Request, exc: Exception):
         return JSONResponse(

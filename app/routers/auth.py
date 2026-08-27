@@ -24,28 +24,33 @@ router = APIRouter(
     summary="Đăng ký tài khoản mới",
     description="Tạo một tài khoản người dùng mới. Yêu cầu email chưa tồn tại trong hệ thống."
 )
+# API Đăng ký tài khoản (Register)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
-    user_exits = db.query(Users).filter(Users.email == user_data.email).first()
-    if user_exits:
-        raise APIException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            code="USER_ALREADY_EXISTS",
-            message="Email đã tồn tại",
+    try:
+        user_exits = db.query(Users).filter(Users.email == user_data.email).first()
+        if user_exits:
+            raise APIException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                code="USER_ALREADY_EXISTS",
+                message="Email đã tồn tại",
+            )
+        hashed_password = get_hashed_password(user_data.password)
+        user = Users(
+            email=user_data.email,
+            password_hash=hashed_password,
+            full_name=user_data.full_name,
         )
-    hashed_password = get_hashed_password(user_data.password)
-    user = Users(
-        email=user_data.email,
-        password_hash=hashed_password,
-        full_name=user_data.full_name,
-    )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return ResponseSchemas(
-        success=True,
-        message="Đăng ký thành công",
-        data=user
-    )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return ResponseSchemas(
+            success=True,
+            message="Đăng ký thành công",
+            data=user
+        )
+    except Exception as e:
+        db.rollback()
+        raise e
 
 login_attempts  = {}
 MAX_ATTEMPTS = 5
@@ -56,6 +61,7 @@ LOCK_TIME = timedelta(minutes=5)
     summary="Đăng nhập",
     description="Xác thực người dùng bằng email và mật khẩu, trả về Access Token và Refresh Token. Cảnh báo: Tạm khóa tài khoản 5 phút nếu đăng nhập sai quá 5 lần."
 )
+# API Đăng nhập lấy Token (Login) kèm tính năng giới hạn Rate Limit
 def login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     time_now = datetime.now(timezone.utc)
     email_to_check = login_data.username
@@ -109,6 +115,7 @@ def login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
     summary="Cấp lại Access Token",
     description="Sử dụng Refresh Token hợp lệ để lấy Access Token mới."
 )
+# API Cấp lại Access Token mới dựa vào Refresh Token
 def refresh_token(refresh_token_data: RefreshTokenRequest, db: Session = Depends(get_db)):
     try:
         payload = jwt.decode(token=refresh_token_data.refresh_token, key=settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
@@ -147,7 +154,7 @@ def refresh_token(refresh_token_data: RefreshTokenRequest, db: Session = Depends
             code="TOKEN_EXPIRED",
             message="Token đã hết hạn"
         )
-    except jwt.InvalidTokenError:
+    except jwt.JWTError:
         raise APIException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             code="INVALID_TOKEN",

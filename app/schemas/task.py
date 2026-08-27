@@ -38,6 +38,7 @@ class TaskPriority(str, enum.Enum):
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
 
+# Schema TaskBase: Định nghĩa cấu trúc chuẩn chung của một công việc
 class TaskBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255, description="Tiêu đề công việc không được để trống và tối đa 255 ký tự")
     description: Optional[str] = Field(None, max_length=1000, description="Mô tả công việc tối đa 1000 ký tự")
@@ -45,6 +46,7 @@ class TaskBase(BaseModel):
     priority: TaskPriority = Field(TaskPriority.MEDIUM, description="Độ ưu tiên công việc")
     due_date: Optional[datetime] = Field(None, description="Ngày hết hạn công việc")
 
+# Schema TaskCreate: Dùng cho API tạo công việc 
 class TaskCreate(TaskBase):
     assignee_id: Optional[int] = Field(None, description="ID của người được giao")
 
@@ -56,6 +58,7 @@ class TaskUpdate(BaseModel):
     priority: Optional[TaskPriority] = Field(None, description="Độ ưu tiên công việc")
     due_date: Optional[datetime] = Field(None, description="Ngày hết hạn công việc")
 
+# Schema TaskResponse: Format output khi lấy chi tiết task (gồm cả comments và attachments)
 class TaskResponse(TaskBase):
     id: int = Field(..., description="ID của công việc")
     project_id: int = Field(..., description="ID của dự án")
@@ -67,6 +70,7 @@ class TaskResponse(TaskBase):
     
     model_config = ConfigDict(from_attributes=True)
 
+# Schema TaskPaginationResponse: Format danh sách task có kèm theo phân trang
 class TaskPaginationResponse(BaseModel):
     items: list[TaskResponse]
     total: int

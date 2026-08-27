@@ -3,6 +3,7 @@ from sqlalchemy.sql import func
 from app.db.database import Base
 from sqlalchemy.orm import relationship
 
+# Bảng TaskAttachment: Lưu thông tin các tệp đính kèm của công việc
 class TaskAttachment(Base):
     __tablename__ = "task_attachments"
     
@@ -17,5 +18,8 @@ class TaskAttachment(Base):
     
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
+    # Các mối quan hệ (Relationships)
+    # File đính kèm thuộc về 1 Công việc (n-1)
     task = relationship("Task", back_populates="attachments")
+    # File đính kèm do 1 Người dùng upload (n-1)
     uploader = relationship("Users")

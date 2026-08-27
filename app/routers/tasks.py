@@ -20,6 +20,7 @@ task_service = TaskService()
     summary="Tạo công việc mới",
     description="Tạo một công việc mới trong dự án. Người tạo sẽ tự động được ghi nhận. Có thể gán cho một thành viên khác trong dự án (assignee_id)."
 )
+# API Tạo công việc mới trong dự án
 def create_task(
     project_id: int,
     task_data: TaskCreate,
@@ -40,6 +41,7 @@ def create_task(
     summary="Lấy danh sách công việc",
     description="Lấy danh sách công việc của dự án. Hỗ trợ phân trang (page, size), bộ lọc (status, priority, assignee_id) và tìm kiếm (search)."
 )
+# API Lấy danh sách công việc của dự án (kèm bộ lọc)
 def get_project_tasks(
     project_id: int,
     status: str = None,
@@ -71,6 +73,7 @@ def get_project_tasks(
     summary="Xem chi tiết công việc",
     description="Lấy thông tin chi tiết của một công việc. Người dùng phải là thành viên của dự án chứa công việc này."
 )
+# API Xem chi tiết công việc
 def get_task(
     task_id: int,
     db: Session = Depends(get_db),
@@ -90,6 +93,7 @@ def get_task(
     summary="Cập nhật công việc",
     description="Cập nhật một phần thông tin của công việc (chỉ gửi những trường cần sửa). Bất kỳ thành viên nào cũng có thể cập nhật."
 )
+# API Cập nhật thông tin công việc
 def update_task(
     task_id: int,
     task_data: TaskUpdate,
@@ -110,6 +114,7 @@ def update_task(
     summary="Xóa công việc",
     description="Xóa vĩnh viễn một công việc. Yêu cầu: Người xóa phải là Chủ dự án (OWNER) HOẶC người đã tạo ra công việc đó."
 )
+# API Xóa công việc
 def delete_task(
     task_id: int,
     db: Session = Depends(get_db),
@@ -130,6 +135,7 @@ def delete_task(
     summary="Thêm bình luận",
     description="Thêm một bình luận mới vào công việc. Chỉ thành viên dự án mới được bình luận."
 )
+# API Thêm bình luận vào công việc
 def add_comment(
     task_id: int,
     comment_data: CommentCreate,
@@ -151,6 +157,7 @@ def add_comment(
     summary="Upload file đính kèm",
     description="Tải lên file đính kèm cho công việc (Giới hạn: <= 5MB. Loại: jpg, png, pdf, docx)."
 )
+# API Upload file đính kèm vào công việc
 def upload_attachment(
     task_id: int,
     file: UploadFile = File(...),

@@ -1,11 +1,12 @@
 from sqlalchemy.orm import Session
 from app.models.activity import ActivityLogModel
 from app.models.project import Project, ProjectMember, ProjectRole
-from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectMemberCreate
+from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectMemberCreate, ProjectMemberUpdate
 from app.models.user import Users
 from app.core.exceptions import APIException
 from datetime import datetime, timezone
 from typing import Optional
+from sqlalchemy import func, or_
 
 
 # Lớp ProjectService: Quản lý toàn bộ logic nghiệp vụ (business logic) liên quan đến Dự án
@@ -23,6 +24,7 @@ class ProjectService():
     # Tạo dự án mới và tự động gán người tạo làm Chủ sở hữu (OWNER)
     def create_project(self, db: Session, project_data: ProjectCreate, current_user: int):
         try:
+
             new_project = Project(
                 name=project_data.name,
                 description=project_data.description,
@@ -61,17 +63,19 @@ class ProjectService():
             )
 
     # Lấy danh sách các dự án mà User hiện tại đang tham gia
-    def get_list_project(self, db: Session, current_user_id: int, search: Optional[str] = None):
+    def get_list_project(self, db: Session, current_user_id: int, search: Optional[str] = None, role: Optional[ProjectRole] = None):
         query = db.query(Project).join(ProjectMember).filter(
             Project.is_deleted == False,
             ProjectMember.user_id == current_user_id
+                )
 
-        )
         if search:
             query = query.filter(Project.name.ilike(f"%{search}%"))
-        return query.order_by(Project.id.desc()).all()
+            
+        return query.order_by(Project.name.desc()).all()
 
     # Xem chi tiết một dự án (phải là thành viên mới được xem)
+
     def get_project_by_id(self, db: Session, project_id: int, current_user_id: int):
         query = db.query(Project).join(ProjectMember).filter(
             Project.is_deleted == False,

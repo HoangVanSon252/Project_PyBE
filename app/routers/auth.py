@@ -9,7 +9,7 @@ from app.core.security import get_hashed_password, verify_password, create_acces
 from app.schemas.token import RefreshTokenRequest
 from jose import jwt
 from app.core.config import settings
-from app.dependencies.deps import get_db
+from app.dependencies.deps import get_db, get_current_user
 from datetime import timedelta, datetime, timezone
 router = APIRouter(
     prefix="/auth",
@@ -27,13 +27,15 @@ router = APIRouter(
 # API Đăng ký tài khoản (Register)
 def register(user_data: UserCreate, db: Session = Depends(get_db)):
     try:
-        user_exits = db.query(Users).filter(Users.email == user_data.email).first()
+        user_exits = db.query(Users).filter(
+            Users.email == user_data.email).first()
         if user_exits:
             raise APIException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 code="USER_ALREADY_EXISTS",
                 message="Email đã tồn tại",
             )
+
         hashed_password = get_hashed_password(user_data.password)
         user = Users(
             email=user_data.email,
@@ -52,9 +54,11 @@ def register(user_data: UserCreate, db: Session = Depends(get_db)):
         db.rollback()
         raise e
 
-login_attempts  = {}
+
+login_attempts = {}
 MAX_ATTEMPTS = 5
 LOCK_TIME = timedelta(minutes=5)
+
 
 @router.post(
     "/login",
@@ -95,8 +99,10 @@ def login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
             code="ACCOUNT_INACTIVE",
             message="Tài khoản của bạn đã bị khóa",
         )
-    access_token = create_access_token(data={"id": str(user.id), "role": str(user.role)})
-    refresh_token = create_refresh_token(data={"id": str(user.id), "role": str(user.role)})
+    access_token = create_access_token(
+        data={"id": str(user.id), "role": str(user.role)})
+    refresh_token = create_refresh_token(
+        data={"id": str(user.id), "role": str(user.role)})
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -118,7 +124,8 @@ def login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
 # API Cấp lại Access Token mới dựa vào Refresh Token
 def refresh_token(refresh_token_data: RefreshTokenRequest, db: Session = Depends(get_db)):
     try:
-        payload = jwt.decode(token=refresh_token_data.refresh_token, key=settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(token=refresh_token_data.refresh_token,
+                             key=settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         user_id = payload.get("id")
         token_type = payload.get("type")
         if token_type != "refresh" or user_id is None:
@@ -134,7 +141,8 @@ def refresh_token(refresh_token_data: RefreshTokenRequest, db: Session = Depends
                 code="USER_NOT_FOUND",
                 message="Người dùng không tồn tại"
             )
-        access_token = create_access_token(data={"id": str(user.id), "role": str(user.role)})
+        access_token = create_access_token(
+            data={"id": str(user.id), "role": str(user.role)})
         return ResponseSchemas(
             success=True,
             message="Token đã được làm mới thành công",
@@ -160,3 +168,8 @@ def refresh_token(refresh_token_data: RefreshTokenRequest, db: Session = Depends
             code="INVALID_TOKEN",
             message="Token không hợp lệ"
         )
+
+
+@router.get("/auth/verify-token")
+def get_veryfy_token(curent_user: Users = Depends(get_current_user)):
+    return {"valid": True, "user_id": curent_user.id}

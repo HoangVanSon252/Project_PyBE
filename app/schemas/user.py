@@ -48,7 +48,6 @@ class UserResponse(UserBase):
     is_active: bool = Field(...,
                             description="Trạng thái hoạt động của người dùng")
     created_at: datetime = Field(..., description="Thời gian tạo người dùng")
-    account_age_days: int = Field(..., description="Số ngày tài khoản đã tồn tại")
     model_config = ConfigDict(from_attributes=True)
 
 

@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, status, Response
 from sqlalchemy.orm import Session
 from app.dependencies.deps import get_db, get_current_user
 from app.services.project import project_service
-from app.schemas.project import ProjectCreate,ProjectResponse,ProjectUpdate, ProjectMemberResponse, ProjectMemberCreate
+from app.schemas.project import ProjectCreate, ProjectResponse, ProjectUpdate, ProjectMemberResponse, ProjectMemberCreate, ProjectRole, ProjectMemberUpdate
 from app.schemas.response import ResponseSchemas
 from app.models.user import Users
 from typing import Optional
@@ -11,6 +11,7 @@ router = APIRouter(
     prefix="/projects",
     tags=["projects"]
 )
+
 
 @router.post(
     "/",
@@ -32,6 +33,7 @@ async def create_project(
         data=new_project
     )
 
+
 @router.get(
     "/",
     response_model=ResponseSchemas[list[ProjectResponse]],
@@ -41,15 +43,18 @@ async def create_project(
 # API Lấy danh sách dự án mà User hiện tại có tham gia
 async def get_list_project(
     search: Optional[str] = Query(None, description="Tìm kiếm theo tên dự án"),
+    role: Optional[ProjectRole] = Query(None, description="Lọc theo vai trò"),
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    list_project = project_service.get_list_project(db, current_user.id, search)
+    list_project = project_service.get_list_project(
+        db, current_user.id, search, role)
     return ResponseSchemas(
         success=True,
         message="Lấy danh sách dự án thành công",
         data=list_project
     )
+
 
 @router.get(
     "/{project_id}",
@@ -63,12 +68,14 @@ async def get_project_by_id(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    project = project_service.get_project_by_id(db, project_id, current_user.id)
+    project = project_service.get_project_by_id(
+        db, project_id, current_user.id)
     return ResponseSchemas(
         success=True,
         message="Lấy thông tin dự án thành công",
         data=project
     )
+
 
 @router.put(
     "/{project_id}",
@@ -83,12 +90,14 @@ async def update_project(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    updated_project = project_service.update_project(db, project, project_id, current_user.id)
+    updated_project = project_service.update_project(
+        db, project, project_id, current_user.id)
     return ResponseSchemas(
         success=True,
         message="Cập nhật dự án thành công",
         data=updated_project
     )
+
 
 @router.delete(
     "/{project_id}",
@@ -102,12 +111,14 @@ async def delete_project(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    deleted_project = project_service.delete_project(db, project_id, current_user.id)
+    deleted_project = project_service.delete_project(
+        db, project_id, current_user.id)
     return ResponseSchemas(
         success=True,
         message="Xóa dự án thành công",
         data=deleted_project
     )
+
 
 @router.post(
     "/{project_id}/members",
@@ -122,12 +133,14 @@ async def add_member_to_project(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    new_member = project_service.add_member_to_project(db, project_id, current_user.id, member)
+    new_member = project_service.add_member_to_project(
+        db, project_id, current_user.id, member)
     return ResponseSchemas(
         success=True,
         message="Thêm thành viên vào dự án thành công",
         data=new_member
     )
+
 
 @router.get(
     "/{project_id}/members",
@@ -141,12 +154,14 @@ async def get_members_from_project(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    members = project_service.get_member_project(db, project_id, current_user.id)
+    members = project_service.get_member_project(
+        db, project_id, current_user.id)
     return ResponseSchemas(
         success=True,
         message="Lấy danh sách thành viên thành công",
         data=members
     )
+
 
 @router.delete(
     "/{project_id}/members/{member_id}",
@@ -161,7 +176,8 @@ async def remove_member_from_project(
     db: Session = Depends(get_db),
     current_user: Users = Depends(get_current_user)
 ):
-    removed_member = project_service.delete_member_project(db, project_id, current_user.id, member_id)
+    removed_member = project_service.delete_member_project(
+        db, project_id, current_user.id, member_id)
     return ResponseSchemas(
         success=True,
         message="Xóa thành viên khỏi dự án thành công",

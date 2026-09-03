@@ -8,7 +8,7 @@ import enum
 class UserRole(str, enum.Enum):
     ADMIN = "ADMIN"
     USER = "USER"
-
+    MANAGER = "MANAGER"
 
 # Bảng Users: Lưu thông tin tài khoản người dùng
 class Users(Base):
@@ -28,3 +28,5 @@ class Users(Base):
     project_members = relationship("ProjectMember", back_populates="user")
     # 1 User có thể được giao nhiều Công việc (1-n)
     tasks = relationship("Task", back_populates="assignee", foreign_keys="[Task.assignee_id]")
+    # 1 User có thể tạo nhiều Công việc (1-n)
+    created_tasks = relationship("Task", back_populates="creator", foreign_keys="[Task.creator_id]")

@@ -5,11 +5,16 @@ from app.db.database import Base
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text, Enum, Boolean
 
 # Enum vai trò của thành viên trong dự án
+
+
 class ProjectRole(str, enum.Enum):
     OWNER = "OWNER"
     MEMBER = "MEMBER"
+    VIEWER = "VIEWER"
 
-# Bảng Projects: Lưu thông tin các dự án 
+# Bảng Projects: Lưu thông tin các dự án
+
+
 class Project(Base):
     __tablename__ = "projects"
 
@@ -25,18 +30,22 @@ class Project(Base):
     # Dự án thuộc về 1 Chủ sở hữu (n-1 với Users)
     owner = relationship("Users", back_populates="owner_project")
     # Dự án có nhiều thành viên (1-n với bảng trung gian ProjectMember)
-    members = relationship("ProjectMember", back_populates="project", cascade="all, delete-orphan")
+    members = relationship(
+        "ProjectMember", back_populates="project", cascade="all, delete-orphan")
     # Dự án có nhiều công việc (1-n với bảng Tasks)
-    tasks = relationship("Task", back_populates="project", cascade="all, delete-orphan")
+    tasks = relationship("Task", back_populates="project",
+                         cascade="all, delete-orphan")
 
-    
+
 # Bảng ProjectMember: Lưu quan hệ n-n giữa Người dùng và Dự án (gồm Role)
 class ProjectMember(Base):
     __tablename__ = "project_members"
-    project_id = Column(Integer, ForeignKey("projects.id"), primary_key= True)
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key= True)
-    role = Column(Enum(ProjectRole), nullable=False, default= ProjectRole.MEMBER)
-    joined_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    project_id = Column(Integer, ForeignKey("projects.id"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    role = Column(Enum(ProjectRole), nullable=False,
+                  default=ProjectRole.VIEWER)
+    joined_at = Column(DateTime(timezone=True),
+                       server_default=func.now(), nullable=False)
 
     # Các mối quan hệ (Relationships)
     # Liên kết tới Dự án (n-1)

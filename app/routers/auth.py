@@ -1,5 +1,5 @@
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Response
 from app.schemas.user import UserResponse, UserCreate
 from app.models.user import Users
 from app.schemas.response import ResponseSchemas
@@ -9,8 +9,10 @@ from app.core.security import get_hashed_password, verify_password, create_acces
 from app.schemas.token import RefreshTokenRequest
 from jose import jwt
 from app.core.config import settings
+from secrets import token_urlsafe
 from app.dependencies.deps import get_db, get_current_user
 from datetime import timedelta, datetime, timezone
+import re
 router = APIRouter(
     prefix="/auth",
     tags=["Auth"]
@@ -66,7 +68,7 @@ LOCK_TIME = timedelta(minutes=5)
     description="Xác thực người dùng bằng email và mật khẩu, trả về Access Token và Refresh Token. Cảnh báo: Tạm khóa tài khoản 5 phút nếu đăng nhập sai quá 5 lần."
 )
 # API Đăng nhập lấy Token (Login) kèm tính năng giới hạn Rate Limit
-def login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+def login(response: Response, login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     time_now = datetime.now(timezone.utc)
     email_to_check = login_data.username
 
@@ -103,6 +105,10 @@ def login(login_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depen
         data={"id": str(user.id), "role": str(user.role)})
     refresh_token = create_refresh_token(
         data={"id": str(user.id), "role": str(user.role)})
+    # Keep JSON tokens for existing API clients, and also issue HttpOnly cookies for the web UI.
+    response.set_cookie("access_token", access_token, httponly=True, secure=settings.COOKIE_SECURE, samesite=settings.COOKIE_SAMESITE, max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60, path="/")
+    response.set_cookie("refresh_token", refresh_token, httponly=True, secure=settings.COOKIE_SECURE, samesite=settings.COOKIE_SAMESITE, max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400, path="/auth")
+    response.set_cookie("csrf_token", token_urlsafe(32), httponly=False, secure=settings.COOKIE_SECURE, samesite=settings.COOKIE_SAMESITE, max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 86400, path="/")
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
@@ -168,8 +174,3 @@ def refresh_token(refresh_token_data: RefreshTokenRequest, db: Session = Depends
             code="INVALID_TOKEN",
             message="Token không hợp lệ"
         )
-
-
-@router.get("/auth/verify-token")
-def get_veryfy_token(curent_user: Users = Depends(get_current_user)):
-    return {"valid": True, "user_id": curent_user.id}

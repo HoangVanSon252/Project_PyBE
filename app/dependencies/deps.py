@@ -1,14 +1,17 @@
-from locale import str
 from jose import jwt, JWTError
 from fastapi.security import OAuth2PasswordBearer
 from app.db.database import SessionLocal
 from sqlalchemy.orm import Session
-from fastapi import Depends, HTTPException, status
-from app.core.security import settings
+from fastapi import Depends, HTTPException, status, Request
+from app.core.config import settings
 from app.models.user import Users, UserRole
 from app.core.exceptions import APIException
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
+
+def _token_from_request(request: Request, bearer: str | None = None) -> str | None:
+    """Accept legacy bearer tokens and the safer HttpOnly access cookie."""
+    return bearer or request.cookies.get("access_token")
 
 
 # Dependency: Cung cấp Database Session cho từng request, tự động đóng sau khi hoàn thành
@@ -23,10 +26,14 @@ def get_db():
 # Dependency: Bóc tách và xác thực JWT Access Token để lấy thông tin User hiện tại
 def get_current_user(
     db: Session = Depends(get_db),
-    token: str = Depends(oauth2_scheme)
+    request: Request = None,
+    token: str | None = Depends(oauth2_scheme)
 ):
 
     try:
+        token = _token_from_request(request, token)
+        if not token:
+            raise APIException(401, "UNAUTHORIZED", "Yêu cầu xác thực")
         payload = jwt.decode(token, settings.SECRET_KEY,
                              algorithms=[settings.ALGORITHM])
         user_id: str = payload.get("id")

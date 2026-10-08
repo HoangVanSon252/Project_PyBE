@@ -4,6 +4,9 @@ from fastapi.exceptions import RequestValidationError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from fastapi import Request, status, HTTPException
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 # Class APIException: Lớp Exception tùy chỉnh để ném ra các lỗi có kiểm soát trong hệ thống
@@ -62,6 +65,7 @@ def setup_exception_handler(app):
 
     @app.exception_handler(Exception)
     async def exception_handler(request: Request, exc: Exception):
+        logger.exception("Unhandled error on %s %s", request.method, request.url.path, exc_info=exc)
         return JSONResponse(
             status_code=500,
             content={
